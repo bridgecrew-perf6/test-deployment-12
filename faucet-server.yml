@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faucet
+spec:
+  selector:
+    matchLabels:
+      app: faucet
+  template:
+    metadata:
+      labels:
+        app: faucet
+    spec:
+      containers:
+        - name: faucet-server
+          image: composablefi/faucet-server:2802770
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SLACK_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: faucet-secret
+                  key: SLACK_SIGNING_KEY
+            - name: ROOT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: faucet-secret
+                  key: ROOT_KEY
+            - name: SKIP_WASM_BUILD
+              value: "1"
+            - name: RUST_LOG
+              value: "debug"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: faucet-service
+spec:
+  type: ClusterIP
+  selector:
+    app: faucet
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
